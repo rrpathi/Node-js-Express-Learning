@@ -66,7 +66,10 @@ app.delete('/article/:id',function(req,res){
         }
     })
     // console.log(req.params.id);
-})
+});
+app.get('/user/register',function(req,res){
+    res.render('register');
+});
 app.listen(3000,function(){
     console.log('Server Start 3000...');
 });
