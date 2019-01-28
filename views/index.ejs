@@ -1,0 +1,24 @@
+<%- include header.ejs %>
+<div class="container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Body</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%article.forEach(function(value,key){ %>
+      <tr class="singleArticle">
+        <td><%= value.title %></td>
+        <td><%= value.author %></td>
+        <td><%= value.body %></td>
+        <td><button class="btn btn-primary delete" value="<%= value._id %>">Delete</button></td>
+      </tr>
+     <% }) %>
+       
+    </tbody>
+  </table>
+  <%- include footer.ejs %>
