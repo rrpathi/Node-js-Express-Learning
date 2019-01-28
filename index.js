@@ -59,7 +59,10 @@ app.delete('/article/:id',function(req,res){
         if(error){
             console.log('Not Deleted');
         }else{
-            console.log('Deleted');
+            return res.status(200).send({
+                message: 'Deleted'
+             });
+            // console.log('Deleted');
         }
     })
     // console.log(req.params.id);

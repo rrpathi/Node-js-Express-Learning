@@ -7,7 +7,7 @@ $(document).ready(function(){
             type:'DELETE',
             url:'/article/'+delete_id,
             success:function(response){
-                console.log('Delete');
+                console.log(response.message);
             }
         });
     });
