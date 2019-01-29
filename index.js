@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 const config = require('./config/database');
 const passport = require('passport');
 const session = require('express-session');
-app.use(session({secret: 'Secret',saveUninitialized: true,resave: true}));
+app.use(session({secret: 'Secret',saveUninitialized: false,resave: false}));
 
 app.use(passport.initialize());
 // app.use(passport.session());
@@ -39,7 +39,7 @@ app.get('/',function(req,res){
     if(req.session.user_id == undefined){
         res.redirect('/user/login');
     }else{
-           Article.find({},function(error,articles){
+           Article.find({'user_id':req.session.user_id},function(error,articles){
         if(error){
             console.log(error)
         }else{
@@ -71,6 +71,7 @@ app.post('/article/add',function(req,res){
     article.title = req.body.title;
     article.author = req.body.author;
     article.body = req.body.body;
+    article.user_id = req.session.user_id;
     article.save(function(error){
         if(error){
             console.log('error');
@@ -129,6 +130,15 @@ app.get('/user/logout',function(req,res){
     res.redirect('/user/login');
 });
 
+app.get('/download',function(req,res){
+    if(req.session.user_id == undefined){
+        res.redirect('/user/login');
+    }else{
+        res.render('download');
+    }
+
+});
+
 // app.post('/user/login', function(req, res, next){
 //     passport.authenticate('local', {
 //       successRedirect:'/',
@@ -159,6 +169,9 @@ app.post('/user/login',
 //       console.log('out')
 //   }
 // });
+app.get('/api/login',function(req,res){
+    res.send('Hello');
+});
 
 app.listen(3000,function(){
     console.log('Server Start 3000...');

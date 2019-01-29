@@ -12,6 +12,10 @@ let articleSchema = mongoose.Schema({
     body:{
         type:String,
         required:true 
+    },
+    user_id:{
+        type:String,
+        required:true
     }
 });
 
