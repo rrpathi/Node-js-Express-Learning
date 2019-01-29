@@ -7,6 +7,13 @@ let Users = require('./model/users');
 var bodyParser = require('body-parser');
 const config = require('./config/database');
 const passport = require('passport');
+const session = require('express-session');
+app.use(session({secret: 'Secret',saveUninitialized: true,resave: true}));
+
+app.use(passport.initialize());
+// app.use(passport.session());
+
+
 mongoose.connect(config.database);
 
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -26,9 +33,13 @@ app.set('views',path.join(__dirname,'views'));
 app.set('view engine','ejs');
 
 app.use(express.static(path.join(__dirname,'public')));
+// res.render('registration', {error: false});
 
 app.get('/',function(req,res){
-    Article.find({},function(error,articles){
+    if(req.session.user_id == undefined){
+        res.redirect('/user/login');
+    }else{
+           Article.find({},function(error,articles){
         if(error){
             console.log(error)
         }else{
@@ -37,10 +48,23 @@ app.get('/',function(req,res){
              });
         }
     });
+    }
+ 
 });
 
+app.use(function(req, res, next) {
+  res.data = 'Hello';
+  next();
+});
+
+
 app.get('/article/add',function(req,res){
-    res.render('add_article');
+    console.log(req.session.user_id);
+    if(req.session.user_id == undefined){
+        res.redirect('/user/login');
+    }else{
+        res.render('add_article');
+    }
 });
 app.post('/article/add',function(req,res){
     let article = new Article();
@@ -94,29 +118,47 @@ app.post('/user/register',function(req,res){
 // Passport Config
 require('./config/passport')(passport);
 // Passport Middleware
-app.use(passport.initialize());
-app.use(passport.session());
+
 
 app.get('/user/login',function(req,res){
     res.render('login');
 });
 
-app.post('/user/login', function(req, res, next){
-    passport.authenticate('local', {
-      successRedirect:'/',
-      failureRedirect:'/user/login',
-    //   failureFlash: true
-    })(req, res, next);
+app.get('/user/logout',function(req,res){
+    req.session.destroy();
+    res.redirect('/user/login');
+});
+
+// app.post('/user/login', function(req, res, next){
+//     passport.authenticate('local', {
+//       successRedirect:'/',
+//       failureRedirect:'/user/login',
+//     //   failureFlash: true
+//     })(req, res, next);
+//     console.log('logged in');
+//     console.log(req.session);
+//   });
+
+app.post('/user/login', 
+  passport.authenticate('local', { failureRedirect: '/error' }),
+  function(req, res) {
+    req.session.user_id = req.session.passport.user;
+    res.redirect('/article/add');
+    // res.render('');
+    // console.log(req.session);
+    // req.session.email = req.user.username;
+    // console.log(req.session.email); 
+    // res.redirect('/success?username='+req.user.username);
   });
 
-app.get('*',function(req,res){
-    if (req.user) {
-        console.log('log in')
-      // logged in
-  } else {
-      console.log('out')
-  }
-});
+// app.get('*',function(req,res){
+//     if (req.user) {
+//         console.log('log in')
+//       // logged in
+//   } else {
+//       console.log('out')
+//   }
+// });
 
 app.listen(3000,function(){
     console.log('Server Start 3000...');

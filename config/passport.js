@@ -12,6 +12,12 @@ module.exports = function(passport){
                 console.log('No User Found');
                 return done(null,false,{message:'Nouser Found'});
             }
+
+            if (user.password != password) {
+              return done(null, false);
+            }
+            return done(null, user);
+        
             // if (!user.validPassword(password)) {
             //     console.log('Wrong password');
             //     return done(null, false, { message: 'Incorrect password.' });
