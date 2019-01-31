@@ -9,6 +9,7 @@ const config = require('./config/database');
 const passport = require('passport');
 const session = require('express-session');
 app.use(session({secret: 'Secret',saveUninitialized: false,resave: false}));
+var jwt = require('jsonwebtoken');
 
 app.use(passport.initialize());
 // app.use(passport.session());
@@ -116,6 +117,51 @@ app.post('/user/register',function(req,res){
     });
 });
 
+app.post('/api/login',function(req,res){
+    // res.send(req.body.email);
+    Users.findOne({email:req.body.email},function(err,user){
+        // res.send('Hello');
+        if(!user){
+            res.send('User Not Exist');
+        }else{
+            if(user.password == req.body.password){
+                const JWTToken = jwt.sign({email:user.email,_id:user._id},'secret');
+                return res.status(200).send({success:'Hello Success',token:JWTToken});
+                // res.send('Login Success');
+            }else{
+                res.send('Wrong Password');
+            }
+        }
+    });
+});
+
+app.post('/api/post',verifyToken,function(req,res){
+    jwt.verify(req.token, 'secret', (err, authData) => {
+        if(err) {
+          res.send('Check Your Bearer Token');
+        } else {
+          res.json({
+            message: 'Post created...',
+            authData
+          });
+        }
+      });
+
+});
+
+function verifyToken(req,res,next){
+    const bearerHeader = req.headers['authorization'];
+    if(typeof bearerHeader !== 'undefined'){
+        const bearer = bearerHeader.split(' ');
+        const bearerToken = bearer[1];
+        req.token = bearerToken;
+        next();
+    }else{
+        res.send('Error');
+    }   
+
+}
+
 // Passport Config
 require('./config/passport')(passport);
 // Passport Middleware
@@ -170,7 +216,7 @@ app.post('/user/login',
 //   }
 // });
 app.get('/api/login',function(req,res){
-    res.send('Hello');
+    res.json();
 });
 
 app.listen(3000,function(){
