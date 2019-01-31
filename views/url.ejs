@@ -1,0 +1,18 @@
+<%- include header.ejs %>
+<div class="container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>url</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%urls.forEach(function(value,key){ %>
+      <tr class="singleArticle">
+        <td><%= value.url %></td>
+      </tr>
+     <% }) %>
+       
+    </tbody>
+  </table>
+  <%- include footer.ejs %>

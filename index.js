@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 let Article = require('./model/article');
 let Users = require('./model/users');
+let URL = require('./model/url');
 var bodyParser = require('body-parser');
 const config = require('./config/database');
 const passport = require('passport');
@@ -14,7 +15,12 @@ var jwt = require('jsonwebtoken');
 app.use(passport.initialize());
 // app.use(passport.session());
 
-
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
+  
 mongoose.connect(config.database);
 
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -53,10 +59,6 @@ app.get('/',function(req,res){
  
 });
 
-app.use(function(req, res, next) {
-  res.data = 'Hello';
-  next();
-});
 
 
 app.get('/article/add',function(req,res){
@@ -67,6 +69,25 @@ app.get('/article/add',function(req,res){
         res.render('add_article');
     }
 });
+
+app.get('/view/url',function(req,res){
+    console.log(req.session.user_id);
+    if(req.session.user_id == undefined){
+        res.redirect('/user/login');
+    }else{
+        URL.find({'user_id':req.session.user_id},function(error,urls){
+            if(error){
+                console.log(error)
+            }else{
+                 res.render('url',{
+                urls:urls
+                 });
+            }
+        });
+    }
+});
+
+
 app.post('/article/add',function(req,res){
     let article = new Article();
     article.title = req.body.title;
@@ -126,7 +147,7 @@ app.post('/api/login',function(req,res){
         }else{
             if(user.password == req.body.password){
                 const JWTToken = jwt.sign({email:user.email,_id:user._id},'secret');
-                return res.status(200).send({success:'Hello Success',token:JWTToken});
+                return res.status(200).send({status:'ok',token:JWTToken});
                 // res.send('Login Success');
             }else{
                 res.send('Wrong Password');
@@ -185,15 +206,7 @@ app.get('/download',function(req,res){
 
 });
 
-// app.post('/user/login', function(req, res, next){
-//     passport.authenticate('local', {
-//       successRedirect:'/',
-//       failureRedirect:'/user/login',
-//     //   failureFlash: true
-//     })(req, res, next);
-//     console.log('logged in');
-//     console.log(req.session);
-//   });
+
 
 app.post('/user/login', 
   passport.authenticate('local', { failureRedirect: '/error' }),
@@ -215,9 +228,29 @@ app.post('/user/login',
 //       console.log('out')
 //   }
 // });
-app.get('/api/login',function(req,res){
-    res.json();
+app.post('/api/addArticle',function(req,res){
+    jwt.verify(req.body.jwt_token, 'secret', (err, authData) => {
+        if(err) {
+          res.send('Check Your Bearer Token');
+        } else {
+            let url = new URL();
+            url.url = req.body.articleUrl;
+            url.user_id = authData._id;
+            url.save(function(error){
+        if(error){
+            res.send(error);
+        }else{
+           res.send('Url  Saved');
+        }
+    });
+           
+         
+        }
+      });
+
 });
+
+
 
 app.listen(3000,function(){
     console.log('Server Start 3000...');
