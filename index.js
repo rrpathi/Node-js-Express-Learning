@@ -5,9 +5,11 @@ const mongoose = require('mongoose');
 let Article = require('./model/article');
 let Users = require('./model/users');
 let URL = require('./model/url');
+const bcrypt = require('bcrypt');
 var bodyParser = require('body-parser');
 const config = require('./config/database');
 const passport = require('passport');
+// const bcrypt = require('bcryptjs');
 const session = require('express-session');
 app.use(session({secret: 'Secret',saveUninitialized: false,resave: false}));
 var jwt = require('jsonwebtoken');
@@ -42,10 +44,15 @@ app.set('view engine','ejs');
 app.use(express.static(path.join(__dirname,'public')));
 // res.render('registration', {error: false});
 
-app.get('/',function(req,res){
+function validateSession(req,res,next){
     if(req.session.user_id == undefined){
         res.redirect('/user/login');
     }else{
+        next();
+    }
+}
+
+app.get('/',validateSession,function(req,res){
            Article.find({'user_id':req.session.user_id},function(error,articles){
         if(error){
             console.log(error)
@@ -55,26 +62,19 @@ app.get('/',function(req,res){
              });
         }
     });
-    }
  
 });
 
 
 
-app.get('/article/add',function(req,res){
-    console.log(req.session.user_id);
-    if(req.session.user_id == undefined){
-        res.redirect('/user/login');
-    }else{
+app.get('/article/add',validateSession,function(req,res){
+    // console.log(req.session.user_id);
+   
         res.render('add_article');
-    }
 });
 
-app.get('/view/url',function(req,res){
-    console.log(req.session.user_id);
-    if(req.session.user_id == undefined){
-        res.redirect('/user/login');
-    }else{
+app.get('/view/url',validateSession,function(req,res){
+    // console.log(req.session.user_id);
         URL.find({'user_id':req.session.user_id},function(error,urls){
             if(error){
                 console.log(error)
@@ -84,7 +84,6 @@ app.get('/view/url',function(req,res){
                  });
             }
         });
-    }
 });
 
 
@@ -94,13 +93,18 @@ app.post('/article/add',function(req,res){
     article.author = req.body.author;
     article.body = req.body.body;
     article.user_id = req.session.user_id;
-    article.save(function(error){
-        if(error){
-            console.log('error');
-        }else{
-            res.redirect('/article/add');
-        }
-    });
+    // article.save(function(error){
+    //     if(error){
+    //         console.log('error');
+    //     }else{
+    //         res.redirect('/article/add');
+    //     }
+    // });
+    article.save().then(function(){
+        res.redirect('/article/add');
+    }).catch(function(error){
+        console.log(error);
+    })
 });
 
 app.delete('/article/:id',function(req,res){
@@ -126,15 +130,15 @@ app.post('/user/register',function(req,res){
     const email = req.body.email;
     const username = req.body.username;
     const password = req.body.password;
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
 
-    let newUser = new Users({'name':name,'email':email,'username':username,'password':password});
-    newUser.save(function(err){
-        if(err){
-            console.log('Not Register');
-        }else{
-            res.redirect('/user/login');
-            // console.log('Register Successfully');
-        }
+
+    let newUser = new Users({'name':name,'email':email,'username':username,'password':hash});
+    newUser.save().then(function(){
+        res.redirect('/user/login');
+    }).catch(function(error){
+        console.log('Not Register');
     });
 });
 
@@ -145,13 +149,15 @@ app.post('/api/login',function(req,res){
         if(!user){
             res.send('User Not Exist');
         }else{
-            if(user.password == req.body.password){
-                const JWTToken = jwt.sign({email:user.email,_id:user._id},'secret');
-                return res.status(200).send({status:'ok',token:JWTToken});
-                // res.send('Login Success');
-            }else{
-                res.send('Wrong Password');
-            }
+            bcrypt.compare(req.body.password,user.password,function(err,result){
+                if(result){
+                    const JWTToken = jwt.sign({email:user.email,_id:user._id},'secret');
+                    return res.status(200).send({status:'ok',token:JWTToken});
+                }else{
+                    res.send('Wrong Password');
+                }
+              });
+
         }
     });
 });
@@ -197,13 +203,8 @@ app.get('/user/logout',function(req,res){
     res.redirect('/user/login');
 });
 
-app.get('/download',function(req,res){
-    if(req.session.user_id == undefined){
-        res.redirect('/user/login');
-    }else{
+app.get('/download',validateSession,function(req,res){
         res.render('download');
-    }
-
 });
 
 
