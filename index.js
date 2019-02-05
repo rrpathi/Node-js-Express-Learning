@@ -147,7 +147,7 @@ app.post('/api/login',function(req,res){
     Users.findOne({email:req.body.email},function(err,user){
         // res.send('Hello');
         if(!user){
-            res.send('User Not Exist');
+           res.send('User Not Exist');
         }else{
             bcrypt.compare(req.body.password,user.password,function(err,result){
                 if(result){
@@ -188,6 +188,30 @@ function verifyToken(req,res,next){
     }   
 
 }
+
+app.post('/api/getArticle',function(req,res){
+    jwt.verify(req.body.token,'secret',(err,authData) =>{
+         if(err) {
+          res.send('Check Your Bearer Token');
+        } else {
+            const user_id = authData._id;
+               Article.find({'user_id':user_id},function(error,articles){
+                if(error){
+                    console.log(error)
+                }else{
+                    res.send(articles);
+                }
+    });
+
+
+          // res.json({
+          //   message: 'Post created...',
+          //   authData
+          // });
+        }
+
+    });
+});
 
 // Passport Config
 require('./config/passport')(passport);
