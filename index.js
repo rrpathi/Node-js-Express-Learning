@@ -121,6 +121,7 @@ app.delete('/article/:id',function(req,res){
     })
     // console.log(req.params.id);
 });
+
 app.get('/user/register',function(req,res){
     res.render('register');
 });
@@ -253,6 +254,8 @@ app.post('/user/login',
 //       console.log('out')
 //   }
 // });
+
+// Add Article using Chrome Extension
 app.post('/api/addArticle',function(req,res){
     jwt.verify(req.body.jwt_token, 'secret', (err, authData) => {
         if(err) {
@@ -273,6 +276,19 @@ app.post('/api/addArticle',function(req,res){
         }
       });
 
+});
+
+app.post('/api/deleteArticle',function(req,res){
+    let query = {_id:req.body.articleId};
+     Article.remove(query,function(error){
+        if(error){
+            return res.send('Not Deleted')
+        }else{
+            return res.status(200).send({
+                message: 'Deleted'
+             });
+        }
+    })
 });
 
 
